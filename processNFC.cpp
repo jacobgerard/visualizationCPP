@@ -1,10 +1,10 @@
+#include "mpi.h"
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <math.h>
 #include <sstream>
 #include "H5Cpp.h"
-#include "mpi.h"
 using namespace H5;
 
 // Constants
@@ -22,9 +22,9 @@ void writeXdmf(int*,std::string,int);
 int main(int argc, char**argv){
   
   int size, rank;
-  //MPI_Init(&argc, &argv);
-  //MPI_Comm_size(MPI_COMM_WORLD, &size);
-  //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int latticeType, Num_ts, ts_rep_freq, warmup_ts, plot_freq;
   double Cs, rho_lbm, u_lbm, omega;
@@ -52,7 +52,7 @@ int main(int argc, char**argv){
   std::stringstream s;
   std::string res;
 
-  for(int d = 0; d < nDumps; d++){
+  for(int d = rank; d < nDumps; d+=size){
 
     float *p_dat = new float[tot];
     std::string p = "density";
@@ -61,8 +61,6 @@ int main(int argc, char**argv){
     std::ifstream pr;
     pr.open(res.c_str(),std::ifstream::in|std::ios::binary);
     pr.read((char*)p_dat,tot*4);
-
-    std::cout << res << std::endl;
 
     s.str("");
     s.clear();
@@ -74,7 +72,6 @@ int main(int argc, char**argv){
     std::ifstream xv;
     xv.open(res.c_str(),std::ifstream::in|std::ios::binary);
     xv.read((char*)x_dat,tot*4);
-    std::cout << res << std::endl;
   
     s.str("");
     s.clear();
@@ -86,7 +83,6 @@ int main(int argc, char**argv){
     std::ifstream yv;
     yv.open(res.c_str(),std::ifstream::in|std::ios::binary);
     yv.read((char*)y_dat,tot*4);
-    std::cout << res << std::endl;
 
     s.str("");
     s.clear();
@@ -98,7 +94,6 @@ int main(int argc, char**argv){
     std::ifstream zv;
     zv.open(res.c_str(),std::ifstream::in|std::ios::binary);
     zv.read((char*)z_dat,tot*4);
-    std::cout << res << std::endl;
 
     s.str("");
     s.clear();
@@ -112,6 +107,7 @@ int main(int argc, char**argv){
     std::cout << "Processing data dump #" << d << std::endl;
     writeH5(p_dat,x_dat,y_dat,z_dat,v_dat,"out.h5",xdims,d);
     writeXdmf(xdims,"data.xmf",d);
+    MPI_Barrier(MPI_COMM_WORLD);
   }
  
   return 0;
