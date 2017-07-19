@@ -1,4 +1,3 @@
-#include "mpi.h"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -22,9 +21,6 @@ void writeXdmf(int*,std::string,int);
 int main(int argc, char**argv){
   
   int size, rank;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int latticeType, Num_ts, ts_rep_freq, warmup_ts, plot_freq;
   double Cs, rho_lbm, u_lbm, omega;
@@ -52,9 +48,14 @@ int main(int argc, char**argv){
   std::stringstream s;
   std::string res;
 
-  for(int d = rank; d < nDumps; d+=size){
+  float *p_dat = new float[tot];
+  float *x_dat = new float[tot];
+  float *y_dat = new float[tot];
+  float *z_dat = new float[tot];
+  float *v_dat = new float[tot];
 
-    float *p_dat = new float[tot];
+  for(int d = 0; d < nDumps; d++){
+
     std::string p = "density";
     s << p << d << end;
     res = s.str();
@@ -65,7 +66,6 @@ int main(int argc, char**argv){
     s.str("");
     s.clear();
 
-    float *x_dat = new float[tot];
     std::string x = "ux";
     s << x << d << end;
     res = s.str();
@@ -76,7 +76,6 @@ int main(int argc, char**argv){
     s.str("");
     s.clear();
 
-    float *y_dat = new float[tot];
     std::string y = "uy";
     s << y << d << end;
     res = s.str();
@@ -87,7 +86,6 @@ int main(int argc, char**argv){
     s.str("");
     s.clear();
 
-    float *z_dat = new float[tot];
     std::string z = "uz";
     s << z << d << end;
     res = s.str();
@@ -98,7 +96,6 @@ int main(int argc, char**argv){
     s.str("");
     s.clear();
 
-    float *v_dat = new float[tot];
 
     for(int i = 0; i < tot; i++){
       v_dat[i] = sqrt((x_dat[i]*x_dat[i])+(y_dat[i]*y_dat[i])+(z_dat[i]*z_dat[i])); 
@@ -107,9 +104,14 @@ int main(int argc, char**argv){
     std::cout << "Processing data dump #" << d << std::endl;
     writeH5(p_dat,x_dat,y_dat,z_dat,v_dat,"out.h5",xdims,d);
     writeXdmf(xdims,"data.xmf",d);
-    MPI_Barrier(MPI_COMM_WORLD);
   }
  
+  delete [] p_dat;
+  delete [] x_dat;
+  delete [] y_dat;
+  delete [] z_dat;
+  delete [] v_dat;
+
   return 0;
 }
 
